@@ -1,13 +1,9 @@
 #!/usr/bin/env python
 # -*- coding:cp936 -*-
 import os
-import math
-import sys
+
 import time
 import re
-import xlsxwriter
-import tkMessageBox
-import xlsxwriter
 import tkFileDialog
 import numpy as np
 import Tkinter
