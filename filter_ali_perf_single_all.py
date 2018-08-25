@@ -252,17 +252,17 @@ def get_data():
         all_file_text_seq = open(filename_seq_result, mode='r').read()
         blockListSeq = ['128kB', '64kB', '32kB', '16kB', '8kB', '4kB']
         rwList = ['WR', 'RD']
-        qdListSeq = ['1', '2', '4', '8', '16', '32', '64', '128']
+        qdListSeq = ['1', '2', '4', '8', '16', '32']
         policyListJob = []
 
-        policyListBW = ['512kB Seq WR 1job QD128:', '512kB Seq RD 1job QD128:']
+        policyListBW = ['512kB Seq WR 1job QD32:', '512kB Seq RD 1job QD32:']
         for block in blockListSeq:
             for rw in rwList:
-                policy4job = block + ' Seq' + ' ' + rw + ' 4job' + ' QD32:'
+                # policy4job = block + ' Seq' + ' ' + rw + ' 4job' + ' QD32:'
                 for qd in qdListSeq:
                     policy1job = block + ' Seq' + ' ' + rw + ' 1job' + ' QD' + qd + ':'
                     policyListJob.append(policy1job)
-                policyListJob.append(policy4job)
+                # policyListJob.append(policy4job)
         data_bw = []
         data_latency = []
         data_qos = []
@@ -270,7 +270,10 @@ def get_data():
         for index_policy, item_policy in enumerate(policyListJob):
             if_4jobs = re.search(pattern_find_4job, item_policy)
             if item_policy != '4kB Seq RD 4job QD32:':
-                temp_text = re.findall(r'\b%s \(groupid=(.*?)%s' % (policyListJob[index_policy], policyListJob[index_policy + 1]), all_file_text_seq, re.S)[0]
+                if index_policy != len(policyListJob) - 1:
+                    temp_text = re.findall(r'\b%s \(groupid=(.*?)%s' % (policyListJob[index_policy], policyListJob[index_policy + 1]), all_file_text_seq, re.S)[0]
+                else:
+                    temp_text = re.findall(r'\b%s \(groupid=(.*)' % (policyListJob[index_policy]), all_file_text_seq, re.S)[0]
             else:
                 temp_text = re.findall(r'\b%s \(groupid=(.*)' % (policyListJob[index_policy]), all_file_text_seq, re.S)[0]
             if if_4jobs is None:
@@ -281,35 +284,39 @@ def get_data():
             data_latency.append(latency)
             data_qos.append(qos_data)
         for index_512k_bw, item_512k_bw in enumerate(policyListBW):
-            if item_512k_bw == '512kB Seq WR 1job QD128:':
+            if item_512k_bw == '512kB Seq WR 1job QD32:':
                 temp_text = re.findall(r'\b%s \(groupid=(.*?)%s' % (policyListBW[index_512k_bw], policyListBW[index_512k_bw + 1]), all_file_text_seq, re.S)[0]
             else:
                 temp_text = re.findall(r'\b%s \(groupid=(.*)' % (policyListBW[index_512k_bw]), all_file_text_seq, re.S)[0]
             bw, latency, qos_data = filter_1job(temp_text)
             data_512k_bw_list.append(bw)
+        if len(blockListSeq) % 2 == 0:
+            para_seq_line = len(blockListSeq)
+        else:
+            para_seq_line = len(blockListSeq) + 1
         for index_bw, item_bw in enumerate(data_bw):
-            shang = index_bw / 18
-            yushu = index_bw % 9
+            shang = index_bw / (len(qdListSeq) * len(rwList))
+            yushu = index_bw % len(qdListSeq)
             column = 1 + yushu
-            if (index_bw / 9) % 2 == 0:
+            if (index_bw / para_seq_line) % 2 == 0:
                 line = 10 + 8 * shang
             else:
                 line = 6 + 8 * shang
             sheet_now.write(line, column, item_bw, format_one)
         for index_latency, item_latency in enumerate(data_latency):
-            shang = index_latency / 18
-            yushu = index_latency % 9
+            shang = index_latency / (len(qdListSeq) * len(rwList))
+            yushu = index_latency % len(qdListSeq)
             column = 1 + yushu
-            if (index_latency / 9) % 2 == 0:
+            if (index_latency / para_seq_line) % 2 == 0:
                 line = 11 + 8 * shang
             else:
                 line = 7 + 8 * shang
             sheet_now.write(line, column, item_latency, format_one)
         for index_qos, item_qos in enumerate(data_qos):
-            shang = index_qos / 18
-            yushu = index_qos % 9
+            shang = index_qos / (len(qdListSeq) * len(rwList))
+            yushu = index_qos % len(qdListSeq)
             column = 1 + yushu
-            if (index_qos / 9) % 2 == 0:
+            if (index_qos / para_seq_line) % 2 == 0:
                 line = 12 + 8 * shang
             else:
                 line = 8 + 8 * shang
@@ -319,24 +326,27 @@ def get_data():
 
     if len(var_char_entry_random_result.get()) != 0:
         all_file_text_random = open(filename_random_result, mode='r').read()
-        blockListRandom = ['4kB', '8kB', '16kB', '32kB']
+        blockListRandom = ['4kB', '8kB', '16kB', '32kB', '1024kB']
         rwList = ['WR', 'RD']
-        qdListRandom = ['1', '2', '4', '8', '16', '32', '64', '128']
+        qdListRandom = ['1', '2', '4', '8', '16', '32']
         policyListJobRandom = []
         for block in blockListRandom:
             for rw in rwList:
-                policy4job = block + ' Ran' + ' ' + rw + ' 4job' + ' QD32:'
+                # policy4job = block + ' Ran' + ' ' + rw + ' 4job' + ' QD32:'
                 for qd in qdListRandom:
                     policy1job = block + ' Ran' + ' ' + rw + ' 1job' + ' QD' + qd + ':'
                     policyListJobRandom.append(policy1job)
-                policyListJobRandom.append(policy4job)
+                # policyListJobRandom.append(policy4job)
         data_iops_random = []
         data_latency_random = []
         data_qos_random = []
         for index_policy_random, item_policy_random in enumerate(policyListJobRandom):
             if_4jobs = re.search(pattern_find_4job, item_policy_random)
             if item_policy_random != '32kB Ran RD 4job QD32:':
-                temp_text = re.findall(r'\b%s \(groupid=(.*?)%s' % (policyListJobRandom[index_policy_random], policyListJobRandom[index_policy_random + 1]), all_file_text_random, re.S)[0]
+                if index_policy_random != len(policyListJobRandom) - 1:
+                    temp_text = re.findall(r'\b%s \(groupid=(.*?)%s' % (policyListJobRandom[index_policy_random], policyListJobRandom[index_policy_random + 1]), all_file_text_random, re.S)[0]
+                else:
+                    temp_text = re.findall(r'\b%s \(groupid=(.*)' % (policyListJobRandom[index_policy_random]), all_file_text_random, re.S)[0]
             else:
                 temp_text = re.findall(r'\b%s \(groupid=(.*)' % (policyListJobRandom[index_policy_random]), all_file_text_random, re.S)[0]
             if if_4jobs is None:
@@ -346,29 +356,33 @@ def get_data():
             data_iops_random.append(iops)
             data_latency_random.append(latency)
             data_qos_random.append(qos_data)
+        if len(blockListRandom) % 2 == 0:
+            para_random_line = len(blockListRandom)
+        else:
+            para_random_line = len(blockListRandom) + 1
         for index_iops_random, item_iops_random in enumerate(data_iops_random):
-            shang = index_iops_random / 18
-            yushu = index_iops_random % 9
-            column = 1 + yushu
-            if (index_iops_random / 9) % 2 == 0:
-                line = 58 + 8 * shang
+            shang_random = index_iops_random / (len(qdListRandom) * len(rwList))
+            yushu_random = index_iops_random % len(qdListRandom)
+            column_random = 1 + yushu_random
+            if (index_iops_random / para_random_line ) % 2 == 0:
+                line_random = 58 + 8 * shang_random
             else:
-                line = 54 + 8 * shang
-            sheet_now.write(line, column, item_iops_random, format_one)
+                line_random = 54 + 8 * shang_random
+            sheet_now.write(line_random, column_random, item_iops_random, format_one)
         for index_latency_random, item_latency_random in enumerate(data_latency_random):
-            shang = index_latency_random / 18
-            yushu = index_latency_random % 9
+            shang = index_latency_random / (len(qdListRandom) * len(rwList))
+            yushu = index_latency_random % len(qdListRandom)
             column = 1 + yushu
-            if (index_latency_random / 9) % 2 == 0:
+            if (index_latency_random / para_random_line) % 2 == 0:
                 line = 59 + 8 * shang
             else:
                 line = 55 + 8 * shang
             sheet_now.write(line, column, item_latency_random, format_one)
         for index_qos_random, item_qos_random in enumerate(data_qos_random):
-            shang = index_qos_random / 18
-            yushu = index_qos_random % 9
+            shang = index_qos_random / (len(qdListRandom) * len(rwList))
+            yushu = index_qos_random % len(qdListRandom)
             column = 1 + yushu
-            if (index_qos_random / 9) % 2 == 0:
+            if (index_qos_random / para_random_line) % 2 == 0:
                 line = 60 + 8 * shang
             else:
                 line = 56 + 8 * shang
@@ -378,13 +392,13 @@ def get_data():
         all_file_text_mix = open(filename_mix_result, mode='r').read()
         policyListJobmix = []
         blockListmix = ['4kB', '8kB', '16kB', '32kB']
-        qdListmix = ['1', '2', '4', '8', '16', '32', '64', '128']
+        qdListmix = ['1', '2', '4', '8', '16', '32']
         for block in blockListmix:
-            policy4job = "%s mix 7/3 4job QD32:" % block
+            # policy4job = "%s mix 7/3 4job QD32:" % block
             for qd in qdListmix:
                 policy1job = "%s mix 7/3 1job QD%s:" % (block, qd)
                 policyListJobmix.append(policy1job)
-            policyListJobmix.append(policy4job)
+            # policyListJobmix.append(policy4job)
         data_iops_mix = []
         data_latency_mix = []
         data_qos_mix = []
@@ -392,7 +406,10 @@ def get_data():
             item_policy_mix = item_policy_mix_sub
             if_4jobs = re.search(pattern_find_4job, item_policy_mix)
             if item_policy_mix != '32kB mix 7/3 4job QD32:':
-                temp_text = re.findall(r'\b%s\s\(groupid=(.*?)%s' % (item_policy_mix, policyListJobmix[index_policy_mix + 1]), all_file_text_mix, re.S)[0]
+                if index_policy_mix != len(policyListJobmix) - 1:
+                    temp_text = re.findall(r'\b%s\s\(groupid=(.*?)%s' % (item_policy_mix, policyListJobmix[index_policy_mix + 1]), all_file_text_mix, re.S)[0]
+                else:
+                    temp_text =re.findall(r'\b%s\s\(groupid=(.*)' % (policyListJobmix[index_policy_mix]), all_file_text_mix, re.S)[0]
             else:
                 temp_text = re.findall(r'\b%s\s\(groupid=(.*)' % (policyListJobmix[index_policy_mix]), all_file_text_mix, re.S)[0]
 
@@ -404,22 +421,22 @@ def get_data():
             data_latency_mix.append(latency)
             data_qos_mix.append(qos_data)
         for index_iops_mix, item_iops_mix in enumerate(data_iops_mix):
-            shang = index_iops_mix / 9
-            yushu = index_iops_mix % 9
+            shang = index_iops_mix / len(qdListmix)
+            yushu = index_iops_mix % len(qdListmix)
             column = 1 + yushu
-            line = 86 + 4 * shang
+            line = 94 + 4 * shang
             sheet_now.write(line, column, item_iops_mix, format_one)
         for index_latency_mix, item_latency_mix in enumerate(data_latency_mix):
-            shang = index_latency_mix / 9
-            yushu = index_latency_mix % 9
+            shang = index_latency_mix / len(qdListmix)
+            yushu = index_latency_mix % len(qdListmix)
             column = 1 + yushu
-            line = 87 + 4 * shang
+            line = 95 + 4 * shang
             sheet_now.write(line, column, item_latency_mix, format_one)
         for index_qos_mix, item_qos_mix in enumerate(data_qos_mix):
-            shang = index_qos_mix / 9
-            yushu = index_qos_mix % 9
+            shang = index_qos_mix / len(qdListmix)
+            yushu = index_qos_mix % len(qdListmix)
             column = 1 + yushu
-            line = 88 + 4 * shang
+            line = 96 + 4 * shang
             sheet_now.write(line, column, item_qos_mix, format_one)
 
     tkMessageBox.showinfo("完成".decode('gbk'), "生成的结果在《阿里单盘性能数据.xlsx》中，请自行查看！".decode('gbk'))
